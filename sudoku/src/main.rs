@@ -1,4 +1,14 @@
-use std::thread
+use std::thread;
+use std::collections::HashMap;
+
+//Macros
+macro_rules! hashmap {
+    ($( $key: expr => $val: expr ),*) => {{
+         let mut map = ::std::collections::HashMap::new();
+         $( map.insert($key, $val); )*
+         map
+    }}
+}
 
 //General solver error
 enum SolveError {  }
@@ -13,10 +23,11 @@ trait Solver {
 
 fn validate(known: &[u8]) -> bool{
 	
-	validNums := map[int]bool{1:true,2:true,3:true,4:true,5:true,6:true,7:true,8:true,9:true}
-
-	for _,v := range known{
-		if validNums[v]{
+	
+	let mut validNums = hashmap!(1..9).map( |x| x=>true).collect::<Vec<_>>();
+	
+	for k in known{
+		if validNums[k]{
 			validNums[v] = false
 		}else{
 			return false 
