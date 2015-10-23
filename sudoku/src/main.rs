@@ -23,7 +23,6 @@ trait Solver {
 
 fn validate(known: &[u8]) -> bool{
 	
-	
 	let mut validNums = hashmap!(1..9).map( |x| x=>true).collect::<Vec<_>>();
 	
 	for k in known{
@@ -38,98 +37,101 @@ fn validate(known: &[u8]) -> bool{
 }
 
 //Cells which store individual numbers in the Grid
-type cell struct {
-	m_possible 	map[int]bool 
-	m_x,m_y 	int
+struct cell {
+	m_possible 	: HashMap, 
+	m_x,m_y 	: u8
 }
 
-func (c *cell) init(x,y int){
-	c.m_possible = make(map[int]bool,9)
-	for i:=1; i<=9; i++{
-		c.m_possible[i] = true
-	}
-	c.m_x = x
-	c.m_y = y
-}
+impl cell {
 
-func (c *cell) validate() bool{
-	if len(c.m_possible) < 1{
-		return false
-	}
-	if len(c.m_possible) > 9{
-		return false
-	}
-	return true
-}
-
-func (c *cell) SetKnownTo(value int){
-	for k,_ := range c.m_possible{
-		if k != value {
-			delete(c.m_possible,k)
+	fn new(x,y : u8) -> cell{
+		cell {
+			m_possible:hashmap!(1..9).map( |x| x=>true).collect::<Vec<_>>(), //re-implement this
+			m_x:x,
+			m_y:y
 		}
-	} 
-}
-
-func (c *cell) TakeKnownFromPossible(known []int) (bool,error){
-
-	var possibles = len(c.m_possible)
+	}
 	
-	if !c.IsKnown(){		
-		for _,v := range known{
-			delete(c.m_possible,v)
+	fn validate(&self) -> bool{
+		if self.m_possible.num() < 1{
+			return false
+		}
+		if self.m_possible.num() > 9{
+			return false
 		}
 		
-		if !c.validate(){
-			errorStr := fmt.Sprintf("TakeKnownFromPossible() made cell invalid: Known:%T:%q", known,known)
-			return false,errors.Wrap(SolveError{errorStr},1)
+		true
+	}
+	
+	func (c *cell) SetKnownTo(value int){
+		for k,_ := range c.m_possible{
+			if k != value {
+				delete(c.m_possible,k)
+			}
+		} 
+	}
+	
+	func (c *cell) TakeKnownFromPossible(known []int) (bool,error){
+	
+		var possibles = len(c.m_possible)
+		
+		if !c.IsKnown(){		
+			for _,v := range known{
+				delete(c.m_possible,v)
+			}
+			
+			if !c.validate(){
+				errorStr := fmt.Sprintf("TakeKnownFromPossible() made cell invalid: Known:%T:%q", known,known)
+				return false,errors.Wrap(SolveError{errorStr},1)
+			}
 		}
+		
+		return possibles != len(c.m_possible),nil //did we take any?
 	}
 	
-	return possibles != len(c.m_possible),nil //did we take any?
-}
-
-func (c* cell) IsKnown() bool{
-	return len(c.m_possible) == 1
-}
-
-func (c *cell) Known() (int, error){
-	
-	// by convention we delete from the map possibles that are no longer possible
-	// so we just need to check map length to see if the cell is solved
-	if len(c.m_possible)!=1{
-		return 0,errors.Wrap(SolveError{"Value not yet known for this cell"},1)
+	func (c* cell) IsKnown() bool{
+		return len(c.m_possible) == 1
 	}
 	
-	//Only one key is now considered "possible", it's value should be true, and it should
-	//be the only one in the list, return it if that is the case 
-	for k,v := range c.m_possible {
-		if v{
-			return k,nil
+	func (c *cell) Known() (int, error){
+		
+		// by convention we delete from the map possibles that are no longer possible
+		// so we just need to check map length to see if the cell is solved
+		if len(c.m_possible)!=1{
+			return 0,errors.Wrap(SolveError{"Value not yet known for this cell"},1)
 		}
-	}
-	
-	return 0,errors.Wrap(SolveError{"Error in cell storage of known values"},1)
-}
-
-func (c *cell) Possibles() ([]int,error){
-	possibles := make([]int,0,len(c.m_possible))
-	
-	for k,v := range c.m_possible{
-		if v{
-			possibles = append(possibles,k)
+		
+		//Only one key is now considered "possible", it's value should be true, and it should
+		//be the only one in the list, return it if that is the case 
+		for k,v := range c.m_possible {
+			if v{
+				return k,nil
+			}
 		}
+		
+		return 0,errors.Wrap(SolveError{"Error in cell storage of known values"},1)
 	}
 	
-	return possibles,nil
-}
-
-func (c cell) String() string {
-	val,err := c.Known()
-	if(err != nil){
-		return "x"
+	func (c *cell) Possibles() ([]int,error){
+		possibles := make([]int,0,len(c.m_possible))
+		
+		for k,v := range c.m_possible{
+			if v{
+				possibles = append(possibles,k)
+			}
+		}
+		
+		return possibles,nil
 	}
 	
-	return strconv.Itoa(val)
+	func (c cell) String() string {
+		val,err := c.Known()
+		if(err != nil){
+			return "x"
+		}
+		
+		return strconv.Itoa(val)
+	}
 }
 
 type cellPtrSlice []*cell 
