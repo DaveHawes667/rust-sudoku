@@ -10,6 +10,14 @@ macro_rules! hashmap {
     }}
 }
 
+macro_rules! hashset {
+    ($( $key: expr => $val: expr ),*) => {{
+         let mut map = ::std::collections::HashSet::new();
+         $( map.insert($key, $val); )*
+         map
+    }}
+}
+
 //General solver error
 enum SolveError {  }
 
@@ -38,7 +46,7 @@ fn validate(known: &[u8]) -> bool{
 
 //Cells which store individual numbers in the Grid
 struct cell {
-	m_possible 	: HashMap, 
+	m_possible 	: HashSet, 
 	m_x,m_y 	: u8
 }
 
@@ -46,34 +54,30 @@ impl cell {
 
 	fn new(x,y : u8) -> cell{
 		cell {
-			m_possible:hashmap!(1..9).map( |x| x=>true).collect::<Vec<_>>(), //re-implement this
+			m_possible:hashset!(1..9).map( |x| x=>true).collect::<Vec<_>>(), 
 			m_x:x,
 			m_y:y
 		}
 	}
 	
 	fn validate(&self) -> bool{
-		if self.m_possible.num() < 1{
+		if self.m_possible.len() < 1{
 			return false
 		}
-		if self.m_possible.num() > 9{
+		if self.m_possible.len() > 9{
 			return false
 		}
 		
 		true
 	}
 	
-	func (c *cell) SetKnownTo(value int){
-		for k,_ := range c.m_possible{
-			if k != value {
-				delete(c.m_possible,k)
-			}
-		} 
+	fn SetKnownTo(&self, value : u8){
+		self.m_possible = hashset![value => true];
 	}
 	
-	func (c *cell) TakeKnownFromPossible(known []int) (bool,error){
+	fn TakeKnownFromPossible(&self, known: &[u8]) -> Result<bool,SolveError>{
 	
-		var possibles = len(c.m_possible)
+		var possibles = len(c.m_possible) //up to here
 		
 		if !c.IsKnown(){		
 			for _,v := range known{
