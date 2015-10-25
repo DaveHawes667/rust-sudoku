@@ -1,5 +1,7 @@
 use std::thread;
 use std::collections::HashMap;
+use std::collections::HashSet;
+use std:iter::Iterator;
 
 //Macros
 macro_rules! hashmap {
@@ -19,7 +21,7 @@ macro_rules! hashset {
 }
 
 //General solver error
-enum SolveError {  }
+enum SolveError { InvalidCell }
 
 
 //General solver interface
@@ -29,9 +31,17 @@ trait Solver {
 	fn validate(&self) -> bool
 }
 
+fn BoolHashSetFromIterator(it: Iterator) HashSet{
+	return hashset!it.map( |x| x=>true).collect::<Vec<_>>();
+}
+
+fn BoolHashMapFromIterator(it: Iterator) HashSet{
+	return hashmap!it.map( |x| x=>true).collect::<Vec<_>>();
+}
+
 fn validate(known: &[u8]) -> bool{
 	
-	let mut validNums = hashmap!(1..9).map( |x| x=>true).collect::<Vec<_>>();
+	let mut validNums = BoolHashMapFromIterator((1..9));
 	
 	for k in known{
 		if validNums[k]{
@@ -46,7 +56,7 @@ fn validate(known: &[u8]) -> bool{
 
 //Cells which store individual numbers in the Grid
 struct cell {
-	m_possible 	: HashSet, 
+	m_possible 	: HashSet<u8,bool>, 
 	m_x,m_y 	: u8
 }
 
@@ -54,7 +64,7 @@ impl cell {
 
 	fn new(x,y : u8) -> cell{
 		cell {
-			m_possible:hashset!(1..9).map( |x| x=>true).collect::<Vec<_>>(), 
+			m_possible:BoolHashSetFromIterator((1..9)), 
 			m_x:x,
 			m_y:y
 		}
@@ -77,27 +87,25 @@ impl cell {
 	
 	fn TakeKnownFromPossible(&self, known: &[u8]) -> Result<bool,SolveError>{
 	
-		var possibles = len(c.m_possible) //up to here
+		var possibles = self.m_possible.len();
 		
-		if !c.IsKnown(){		
-			for _,v := range known{
-				delete(c.m_possible,v)
-			}
+		if !self.IsKnown(){		
+			self.m_possible = self.m_possible.intersection(BoolHashSetFromIterator(known)).collect::<HashSet<u8,bool>>();
 			
-			if !c.validate(){
-				errorStr := fmt.Sprintf("TakeKnownFromPossible() made cell invalid: Known:%T:%q", known,known)
-				return false,errors.Wrap(SolveError{errorStr},1)
+			if !self.validate(){
+				//errorStr := fmt.Sprintf("TakeKnownFromPossible() made cell invalid: Known:%T:%q", known,known)
+				return Err(SolveError::InvalidCell);
 			}
 		}
 		
-		return possibles != len(c.m_possible),nil //did we take any?
+		Ok(possibles != self.m_possible.len()) //did we take any?
 	}
 	
-	func (c* cell) IsKnown() bool{
-		return len(c.m_possible) == 1
+	fn IsKnown(&self) -> bool{
+		self.m_possible.len() == 1
 	}
 	
-	func (c *cell) Known() (int, error){
+	fn Known(&self) -> Result<u8, SolveError> { //Up to here
 		
 		// by convention we delete from the map possibles that are no longer possible
 		// so we just need to check map length to see if the cell is solved
