@@ -21,7 +21,7 @@ macro_rules! hashset {
 }
 
 //General solver error
-enum SolveError { InvalidCell }
+enum SolveError { InvalidCell, CellValueNotKnown, CellKnownValueStorageError }
 
 
 //General solver interface
@@ -105,44 +105,38 @@ impl cell {
 		self.m_possible.len() == 1
 	}
 	
-	fn Known(&self) -> Result<u8, SolveError> { //Up to here
+	fn Known(&self) -> Result<u8, SolveError> { 
 		
 		// by convention we delete from the map possibles that are no longer possible
 		// so we just need to check map length to see if the cell is solved
-		if len(c.m_possible)!=1{
-			return 0,errors.Wrap(SolveError{"Value not yet known for this cell"},1)
+		if !self.IsKnown(){
+			return Err(SolveError::CellValueNotKnown);
 		}
 		
 		//Only one key is now considered "possible", it's value should be true, and it should
 		//be the only one in the list, return it if that is the case 
-		for k,v := range c.m_possible {
+		for (k,v) in &self.m_possible {
 			if v{
-				return k,nil
+				return Ok(k);
 			}
 		}
 		
-		return 0,errors.Wrap(SolveError{"Error in cell storage of known values"},1)
+		Err(SolveError::CellKnownValueStorageError)
 	}
 	
-	func (c *cell) Possibles() ([]int,error){
-		possibles := make([]int,0,len(c.m_possible))
-		
-		for k,v := range c.m_possible{
-			if v{
-				possibles = append(possibles,k)
+	fn Possibles(&self) -> Result<(&[u8],SolveError>{
+		Ok(self.m_possible.keys().collect::<[u8]>())
+	}
+	
+	fn to_string(&self) -> String {
+		match self.Known(){
+			Ok(v) =>{
+				return v.to_string();
+			}
+			Err(e) =>{
+				return "x";
 			}
 		}
-		
-		return possibles,nil
-	}
-	
-	func (c cell) String() string {
-		val,err := c.Known()
-		if(err != nil){
-			return "x"
-		}
-		
-		return strconv.Itoa(val)
 	}
 }
 
