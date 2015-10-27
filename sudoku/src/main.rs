@@ -255,61 +255,11 @@ func (s* square) validate() bool{
 
 type pair struct{
 	m_values 		[2]int
-	m_rowAligned	bool
-	m_rowOrColNum	int
-}
-
-func (s* square) AlignedCellOnlyPairs() ([]pair,error){
-	
-	foundPairs := make([]pair,0,SQUARE_SIZE*SQUARE_SIZE)
-	/*
-	for x1,_ := range s.m_cells{
-		for y1,_ := range s.m_cells[x1]{
-			c1 := s.m_cells[x1][y1]
-			if len(c1.m_possible)==2{
-				for x2,_ := range s.m_cells{
-					for y2,_ := range s.m_cells[x2]{
-						c2 := s.m_cells[x2][y2]
-						if c1 != c2{
-							if len(c2.m_possible)==2{
-								if x2 == x1 || y2 == y1{
-									matchBoth := true
-									valIdx :=0
-									var foundPair pair
-									for k,v := range c2.m_possible{
-										if val,ok :=c1.m_possible[k]; !ok{
-											matchBoth = false
-										}else{
-											pair.m_values[valIdx] = k
-											valIdx++ 
-										}
-									}
-									if matchBoth{
-										foundPair.m_rowAligned = y2==y1
-										if foundPair.m_rowAligned{
-											foundPair.m_rowOrColNum = c1.m_y										
-										}else{
-											foundPair.m_rowOrColNum = c1.m_x										
-										}
-										foundPairs = append(foundPairs,foundPair)
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}*/
-	
-	return foundPairs,nil
 }
 
 //A horizontal or vertical line of 9 cells through the entire Grid.
 type line struct {
 	m_cells 		cellPtrSlice
-	m_rowAligned	bool
-	m_rowOrColNum	int
 }
 
 func(l *line) init(){
@@ -463,8 +413,6 @@ func (g *Grid) Init() {
 		for colNum:=0; colNum < COL_LENGTH; colNum++{
 			r.m_cells[colNum] = &g.m_cells[colNum][i]
 		}
-		r.m_rowAligned = true
-		r.m_rowOrColNum = i
 	}
 	
 	
@@ -476,8 +424,6 @@ func (g *Grid) Init() {
 		for rowNum:=0; rowNum < ROW_LENGTH; rowNum++{
 			c.m_cells[rowNum] = &g.m_cells[i][rowNum]
 		}
-		c.m_rowAligned = false
-		c.m_rowOrColNum = i
 	}
 	
 }
@@ -514,23 +460,6 @@ func (g Grid) Solved() (bool,error) {
 	return true,nil
 }
 
-func (g *Grid) squareExclusionReduce() (bool,error){
-	changed := false
-	/*for i,_ := range g.m_squares{
-		s := &g.m_squares[i]
-		pairs, err := s.AlignedCellOnlyPairs()
-		if err != nil{
-			return false,err
-		}
-		for _,p := range pairs{
-			
-		}
-		
-	}*/
-	
-	return changed,nil	
-}
-
 func(g *Grid) reducePossiblePass() (bool, error){
 	changed := false
 	
@@ -542,11 +471,6 @@ func(g *Grid) reducePossiblePass() (bool, error){
 			}
 			changed = changed || reduced
 		}
-		sqReduce,err := g.squareExclusionReduce()
-		if err != nil{
-				return false,err
-		}
-		changed = changed || sqReduce
 	}
 	
 	return changed,nil
