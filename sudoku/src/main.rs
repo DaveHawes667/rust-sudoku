@@ -1,7 +1,7 @@
 use std::thread;
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std:iter::Iterator;
+use std::iter::Iterator;
 
 //Macros
 macro_rules! hashmap {
@@ -28,15 +28,15 @@ enum SolveError { InvalidCell, CellValueNotKnown, CellKnownValueStorageError }
 trait Solver {
 	fn Solved(&self) -> Result<bool,SolveError>;
 	fn reducePossible(&self) -> Result<bool,SolveError>;
-	fn validate(&self) -> bool
+	fn validate(&self) -> bool;
 }
 
-fn BoolHashSetFromIterator(it: Iterator) HashSet{
-	return hashset!it.map( |x| x=>true).collect::<Vec<_>>();
+fn BoolHashSetFromIterator(it: Iterator) -> HashSet{
+	return hashset!(it.map( |x| x=>true).collect::<Vec<_>>());
 }
 
-fn BoolHashMapFromIterator(it: Iterator) HashSet{
-	return hashmap!it.map( |x| x=>true).collect::<Vec<_>>();
+fn BoolHashMapFromIterator(it: Iterator) -> HashMap{
+	return hashmap!(it.map( |x| x=>true).collect::<Vec<_>>());
 }
 
 fn validate(known: &[u8]) -> bool{
@@ -56,13 +56,14 @@ fn validate(known: &[u8]) -> bool{
 
 //Cells which store individual numbers in the Grid
 struct cell {
-	m_possible 	: HashSet<u8,bool>, 
-	m_x,m_y 	: u8
+	m_possible 	: HashSet<u8,bool>,
+	m_x 		: u8,
+	m_y			: u8
 }
 
 impl cell {
 
-	fn new(x,y : u8) -> cell{
+	fn new(x :u8, y : u8) -> cell{
 		cell {
 			m_possible:BoolHashSetFromIterator((1..9)), 
 			m_x:x,
@@ -124,7 +125,7 @@ impl cell {
 		Err(SolveError::CellKnownValueStorageError)
 	}
 	
-	fn Possibles(&self) -> Result<(&[u8],SolveError>{
+	fn Possibles(&self) -> Result<&[u8],SolveError>{
 		Ok(self.m_possible.keys().collect::<[u8]>())
 	}
 	
@@ -140,45 +141,50 @@ impl cell {
 	}
 }
 
-type cellPtrSlice []*cell 
-
-func (cells cellPtrSlice) Solved() (bool, error){
-	for _,c := range cells{
+fn Solved(cells : &[cell]) -> bool{
+	for c in &cells{
 		if !c.IsKnown(){
-			return false,nil
+			return false;
 		}
 	}
 	
-	return true,nil
+	true
 }
 
-func (cells cellPtrSlice) Known() ([]int, error){
-	known := make([]int,0, len(cells))
-	for _,c := range cells{
+fn Known(cells : &[cell]) -> Result<[u8], SolveError>{
+	let mut known: Vec<u8> = vec![];
+
+	for c in &cells{
 		if c.IsKnown(){
-			val,err := c.Known()
-			if err != nil{
-				return known,err
+			match c.Known(){
+				Ok(v) =>{
+					known.push(v);
+				}
+				Err(e) =>{
+					return Err(e);
+				}
 			}
-			known = append(known,val)
 		}
 	}
 	
-	return known,nil
+	Ok(known)	
 }
 
-func (cells cellPtrSlice) TakeKnownFromPossible(known []int) (bool,error){
+fn TakeKnownFromPossible(cells : &[cell], known : &[u8]) -> Result<bool,SolveError>{ 
+	let mut changed : bool = false;
 	
-	changed := false
-	for _,c := range cells{
-		taken, err := c.TakeKnownFromPossible(known)
-		if err != nil{
-			return false,err
+	for c in &cells{
+		match c.TakeKnownFromPossible(known){
+			Ok(v) =>{
+				changed = changed || v
+			}
+			Err(e) =>{
+				return Err(e);
+			}
 		}
-		changed = changed || taken
 	}
 	
-	return changed,nil
+	Ok(changed)
 }
 
 //Squares which represent one of each of the 9 squares in a Grid, each of which 
